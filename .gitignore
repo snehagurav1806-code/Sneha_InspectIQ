@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Model checkpoints & large binary artifacts (exceeds GitHub 100MB limit)
+models/
+*.ckpt
+*.pt
+*.pth
+*.h5
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Temporary / intermediate test artifacts
+results/test_norm_map.png
+results/cropped_test_cap.png
+results/multi_defect_preview.png
+results/final_3defects_overlay.png
+results/verified_app_overlay.png
+
+# System & IDE files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log

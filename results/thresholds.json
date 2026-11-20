@@ -1,0 +1,27 @@
+{
+  "low": 0.2698,
+  "high": 0.4994,
+  "defect_caught_rate": 1.0,
+  "defect_reject_rate": 1.0,
+  "defect_escape_rate": 0.0,
+  "false_reject_rate": 0.0,
+  "good_pass_rate": 1.0,
+  "review_pct": 0.0,
+  "per_defect_stats": {
+    "dot": {
+      "caught_rate": 1.0,
+      "mean_score": 0.8188,
+      "count": 15
+    },
+    "missing_chunk": {
+      "caught_rate": 1.0,
+      "mean_score": 0.6182,
+      "count": 15
+    },
+    "scratch": {
+      "caught_rate": 1.0,
+      "mean_score": 0.8233,
+      "count": 15
+    }
+  }
+}

@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biorad Medisys | Implant Visual Inspection Station</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #070e17;
+      --bg-panel: #0d1825;
+      --bg-card: #132235;
+      --bg-card-hover: #192c45;
+      --border-color: #1e3650;
+      --border-accent: #2c4d72;
+      --accent-gold: #f5b800;
+      --accent-gold-soft: rgba(245, 184, 0, 0.15);
+      --text-main: #f1f5f9;
+      --text-muted: #8ba1b7;
+      --pass-green: #10b981;
+      --pass-bg: rgba(16, 185, 129, 0.12);
+      --review-amber: #f59e0b;
+      --review-bg: rgba(245, 158, 11, 0.15);
+      --reject-red: #ef4444;
+      --reject-bg: rgba(239, 68, 68, 0.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation / Branding Header */
+    header {
+      background: linear-gradient(90deg, #070e17 0%, #0d1d30 50%, #070e17 100%);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.85rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(10px);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .brand-logo-badge {
+      background: var(--accent-gold);
+      color: #070e17;
+      font-weight: 900;
+      font-size: 1.1rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-titles h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .brand-titles p {
+      font-size: 0.75rem;
+      color: var(--accent-gold);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .header-status-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 0.4rem 0.9rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--pass-green);
+      box-shadow: 0 0 8px var(--pass-green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.9); }
+    }
+
+    /* Main Grid Layout */
+    .app-container {
+      display: grid;
+      grid-template-columns: 320px 1fr 340px;
+      gap: 1.25rem;
+      padding: 1.25rem 2rem;
+      flex: 1;
+      max-width: 1750px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    @media (max-width: 1280px) {
+      .app-container { grid-template-columns: 280px 1fr; }
+      .right-panel { grid-column: span 2; }
+    }
+
+    @media (max-width: 900px) {
+      .app-container { grid-template-columns: 1fr; }
+      .right-panel { grid-column: span 1; }
+    }
+
+    /* Panels & Cards */
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.6rem;
+    }
+
+    .panel-header h2 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-muted);
+    }
+
+    /* Left Sidebar: Controls & Live Source */
+    .control-block label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+    }
+
+    .source-selector {
+      display: flex;
+      gap: 0.5rem;
+      background: var(--bg-card);
+      padding: 0.3rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .source-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.45rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .source-btn.active {
+      background: var(--accent-gold);
+      color: #070e17;
+    }
+
+    /* Dropzone & Camera preview container */
+    .feed-container {
+      background: #000;
+      border: 2px dashed var(--border-color);
+      border-radius: 10px;
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .feed-container:hover {
+      border-color: var(--accent-gold);
+    }
+
+    #cameraVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    #fileInput { display: none; }
+
+    .dropzone-text {
+      text-align: center;
+      padding: 1rem;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+    }
+
+    .dropzone-text svg {
+      width: 36px;
+      height: 36px;
+      margin-bottom: 0.5rem;
+      stroke: var(--accent-gold);
+    }
+
+    .action-btn {
+      background: linear-gradient(135deg, #f5b800 0%, #e0a300 100%);
+      color: #070e17;
+      border: none;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: transform 0.1s, box-shadow 0.2s;
+      box-shadow: 0 4px 12px rgba(245, 184, 0, 0.25);
+    }
+
+    .action-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(245, 184, 0, 0.35);
+    }
+
+    .action-btn:active {
+      transform: translateY(1px);
+    }
+
+    /* Slider styling */
+    .slider-row {
+      margin-top: 0.6rem;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 0.3rem;
+    }
+
+    .slider-header span.val {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      color: var(--accent-gold);
+    }
+
+    input[type=range] {
+      width: 100%;
+      height: 5px;
+      background: var(--border-color);
+      border-radius: 5px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent-gold);
+      cursor: pointer;
+    }
+
+    /* Center Stage: Hero Inspection Decision & Visuals */
+    .center-stage {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    /* Mega Decision Banner */
+    .decision-banner {
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.2rem 1.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.3s;
+    }
+
+    .decision-banner.pass {
+      background: var(--pass-bg);
+      border-color: var(--pass-green);
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.2);
+    }
+
+    .decision-banner.review {
+      background: var(--review-bg);
+      border-color: var(--review-amber);
+      box-shadow: 0 0 25px rgba(245, 158, 11, 0.2);
+    }
+
+    .decision-banner.reject {
+      background: var(--reject-bg);
+      border-color: var(--reject-red);
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.25);
+    }
+
+    .decision-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .decision-value {
+      font-size: 2.2rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+
+    .decision-banner.pass .decision-value { color: var(--pass-green); }
+    .decision-banner.review .decision-value { color: var(--review-amber); }
+    .decision-banner.reject .decision-value { color: var(--reject-red); }
+
+    .score-pills {
+      display: flex;
+      gap: 1.5rem;
+    }
+
+    .score-pill {
+      text-align: right;
+    }
+
+    .score-pill .label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .score-pill .value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* Dual Viewer Grid */
+    .viewer-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.2rem;
+    }
+
+    .viewer-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .viewer-header {
+      background: rgba(0,0,0,0.25);
+      padding: 0.6rem 1rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .viewer-canvas {
+      aspect-ratio: 1 / 1;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .viewer-canvas img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .canvas-placeholder {
+      color: var(--border-color);
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+
+    /* Quick demo test parts row */
+    .sample-pill-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .sample-pill {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .sample-pill:hover {
+      border-color: var(--accent-gold);
+      color: var(--accent-gold);
+      background: var(--accent-gold-soft);
+    }
+
+    /* Inspector Override Station */
+    .override-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .override-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+      text-transform: uppercase;
+    }
+
+    .input-group input, .input-group select {
+      width: 100%;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.5rem 0.7rem;
+      color: var(--text-main);
+      font-size: 0.82rem;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .input-group input:focus {
+      border-color: var(--accent-gold);
+    }
+
+    .override-buttons {
+      display: flex;
+      gap: 0.6rem;
+    }
+
+    .btn-override {
+      flex: 1;
+      padding: 0.55rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-confirm { background: #164e63; color: #38bdf8; border-color: #0284c7; }
+    .btn-confirm:hover { background: #0369a1; color: #fff; }
+
+    .btn-pass { background: #064e3b; color: #34d399; border-color: #059669; }
+    .btn-pass:hover { background: #059669; color: #fff; }
+
+    .btn-reject { background: #7f1d1d; color: #f87171; border-color: #dc2626; }
+    .btn-reject:hover { background: #dc2626; color: #fff; }
+
+    /* Right Panel: Shift Metrics & History */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+    }
+
+    .metric-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.75rem;
+      text-align: center;
+    }
+
+    .metric-box .num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .metric-box .label {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    /* Audit Log Table */
+    .log-table-wrap {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 480px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
+    table.audit-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+    }
+
+    table.audit-table th {
+      background: var(--bg-card);
+      color: var(--text-muted);
+      padding: 0.5rem 0.6rem;
+      text-align: left;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    table.audit-table td {
+      padding: 0.45rem 0.6rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      color: var(--text-main);
+    }
+
+    .badge-mini {
+      display: inline-block;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 0.68rem;
+    }
+
+    .badge-mini.pass { background: var(--pass-bg); color: var(--pass-green); }
+    .badge-mini.review { background: var(--review-bg); color: var(--review-amber); }
+    .badge-mini.reject { background: var(--reject-bg); color: var(--reject-red); }
+
+    /* Scan line animation overlay */
+    .scanning::after {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: var(--accent-gold);
+      box-shadow: 0 0 12px var(--accent-gold);
+      animation: scan 1.2s infinite ease-in-out;
+    }
+
+    @keyframes scan {
+      0% { top: 0%; opacity: 0; }
+      15% { opacity: 1; }
+      85% { opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header>
+    <div class="brand-group">
+      <div class="brand-logo-badge">BIORAD</div>
+      <div class="brand-titles">
+        <h1>Implant Visual Inspection Station</h1>
+        <p>Arthroplasty & Orthopaedic Device Assurance</p>
+      </div>
+    </div>
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <div class="header-status-badge">
+        <span class="status-dot"></span>
+        <span>Model: <strong>PatchCore (WideResNet50)</strong></span>
+      </div>
+      <div class="header-status-badge" style="color: var(--accent-gold); border-color: rgba(245,184,0,0.3);">
+        <span>Stand-in: <strong>{{ object_name }}</strong></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main 3-Column Industrial Layout -->
+  <div class="app-container">
+
+    <!-- LEFT PANEL: Capture & Calibration -->
+    <div class="panel">
+      <div class="panel-header">
+        <h2>1. Image Acquisition</h2>
+      </div>
+
+      <div class="control-block">
+        <label>Input Channel</label>
+        <div class="source-selector">
+          <button class="source-btn active" id="btnUpload" onclick="setSource('upload')">📁 File Upload</button>
+          <button class="source-btn" id="btnCamera" onclick="setSource('camera')">📷 Live Camera</button>
+        </div>
+      </div>
+
+      <!-- Live Feed / Dropzone -->
+      <div class="feed-container" id="feedDropzone" onclick="triggerFileInput()">
+        <video id="cameraVideo" autoplay playsinline></video>
+        <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
+        <div class="dropzone-text" id="dropzoneText">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <p><strong>Click to upload</strong> or drag & drop</p>
+          <p style="font-size: 0.72rem; color: #556980; margin-top: 0.2rem;">PNG, JPG, BMP up to 10MB</p>
+        </div>
+      </div>
+
+      <button class="action-btn" id="btnScan" onclick="performInspection()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        Execute Optical Scan
+      </button>
+
+      <!-- Preloaded Demo Parts for Instant Demo to Judges -->
+      <div class="control-block">
+        <label>Quick Demo Presets (Instant Test)</label>
+        <div class="sample-pill-row">
+          <div class="sample-pill" onclick="loadSyntheticSample('scratch')">⚡ Scratch Defect</div>
+          <div class="sample-pill" onclick="loadSyntheticSample('dot')">⚡ Pit / Void Dot</div>
+          <div class="sample-pill" onclick="loadSyntheticSample('chunk')">⚡ Chipped Rim</div>
+          <div class="sample-pill" onclick="loadSyntheticSample('good')">✓ Flawless Part</div>
+        </div>
+      </div>
+
+      <!-- Threshold Sliders -->
+      <div class="control-block" style="border-top: 1px solid var(--border-color); padding-top: 0.8rem;">
+        <label>Decision Boundaries</label>
+        
+        <div class="slider-row">
+          <div class="slider-header">
+            <span>PASS Threshold (Low)</span>
+            <span class="val" id="lblLow">{{ "%.4f"|format(low) }}</span>
+          </div>
+          <input type="range" id="sliderLow" min="0.0" max="1.0" step="0.01" value="{{ low }}" oninput="updateThresholds()">
+        </div>
+
+        <div class="slider-row">
+          <div class="slider-header">
+            <span>REJECT Threshold (High)</span>
+            <span class="val" id="lblHigh">{{ "%.4f"|format(high) }}</span>
+          </div>
+          <input type="range" id="sliderHigh" min="0.0" max="1.0" step="0.01" value="{{ high }}" oninput="updateThresholds()">
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER PANEL: Real-Time Decision & Dual Visualizer -->
+    <div class="center-stage">
+
+      <!-- Mega Decision Badge -->
+      <div class="decision-banner" id="decisionBanner">
+        <div>
+          <div class="decision-label">Station Disposition</div>
+          <div class="decision-value" id="decisionValue">STANDBY</div>
+        </div>
+        <div class="score-pills">
+          <div class="score-pill">
+            <div class="label">Norm Anomaly Score</div>
+            <div class="value" id="dispScore">--.----</div>
+          </div>
+          <div class="score-pill">
+            <div class="label">Defect Regions</div>
+            <div class="value" id="dispRegions" style="color: var(--reject-red);">--</div>
+          </div>
+          <div class="score-pill">
+            <div class="label">Optical Latency</div>
+            <div class="value" id="dispLatency">-- ms</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dual Visualizer (Original vs Anomaly Heatmap) -->
+      <div class="viewer-grid">
+        <div class="viewer-card">
+          <div class="viewer-header">
+            <span>ACQUIRED SURFACE</span>
+            <span style="color: var(--accent-gold);" id="dispPartId">BM-IMP-00001</span>
+          </div>
+          <div class="viewer-canvas" id="canvasOrig">
+            <span class="canvas-placeholder">Acquired Component Frame</span>
+          </div>
+        </div>
+
+        <div class="viewer-card">
+          <div class="viewer-header">
+            <span>SPATIAL DEFECT HEATMAP</span>
+            <span style="color: #38bdf8;">PATCHCORE JET OVERLAY</span>
+          </div>
+          <div class="viewer-canvas" id="canvasHeat">
+            <span class="canvas-placeholder">Anomaly Localization Layer</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inspector Sign-Off & Audit Logging -->
+      <div class="override-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted);">
+            2. Inspector Validation & Digital Sign-off
+          </h3>
+          <span style="font-size: 0.72rem; color: var(--accent-gold);">FDA 21 CFR Part 820 Audit Trail</span>
+        </div>
+
+        <div class="override-inputs">
+          <div class="input-group">
+            <label>Inspector ID</label>
+            <input type="text" id="inspectorId" value="QA-TECH-01">
+          </div>
+          <div class="input-group">
+            <label>Clinical Notes</label>
+            <input type="text" id="inspectorNotes" placeholder="e.g. Surface validated under 10x magnification">
+          </div>
+        </div>
+
+        <div class="override-buttons">
+          <button class="btn-override btn-confirm" onclick="signOff('Confirmed')">✓ Confirm Automated Decision</button>
+          <button class="btn-override btn-pass" onclick="signOff('Override to PASS')">Pass (Human Override)</button>
+          <button class="btn-override btn-reject" onclick="signOff('Override to REJECT')">Reject (Human Override)</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANEL: Shift Metrics & Audit History -->
+    <div class="panel right-panel">
+      <div class="panel-header">
+        <h2>3. Shift Analytics</h2>
+        <a href="/export/csv" style="font-size: 0.75rem; color: var(--accent-gold); text-decoration: none; font-weight: 600;">📥 Export CSV</a>
+      </div>
+
+      <!-- KPI Grid -->
+      <div class="metric-grid">
+        <div class="metric-box">
+          <div class="num" id="statTotal" style="color: #38bdf8;">0</div>
+          <div class="label">Total Inspected</div>
+        </div>
+        <div class="metric-box">
+          <div class="num" id="statPassRate" style="color: var(--pass-green);">100%</div>
+          <div class="label">Pass Yield</div>
+        </div>
+        <div class="metric-box">
+          <div class="num" id="statRejects" style="color: var(--reject-red);">0</div>
+          <div class="label">Defects Quarantined</div>
+        </div>
+        <div class="metric-box">
+          <div class="num" id="statSpeed" style="color: var(--accent-gold);">--</div>
+          <div class="label">Avg ms / part</div>
+        </div>
+      </div>
+
+      <div class="panel-header" style="margin-top: 0.5rem;">
+        <h2>Live Shift Log</h2>
+      </div>
+
+      <!-- Scrollable Audit Table -->
+      <div class="log-table-wrap">
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th>Part ID</th>
+              <th>Score</th>
+              <th>Decision</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="logTableBody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let currentBlob = null;
+    let cameraStream = null;
+    let lastInspection = null;
+    let partCounter = 1;
+
+    // Switch between File Upload & Camera
+    function setSource(mode) {
+      document.getElementById('btnUpload').classList.toggle('active', mode === 'upload');
+      document.getElementById('btnCamera').classList.toggle('active', mode === 'camera');
+      const video = document.getElementById('cameraVideo');
+      const dropzone = document.getElementById('dropzoneText');
+
+      if (mode === 'camera') {
+        dropzone.style.display = 'none';
+        video.style.display = 'block';
+        navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 640, facingMode: 'environment' } })
+          .then(stream => {
+            cameraStream = stream;
+            video.srcObject = stream;
+          })
+          .catch(err => {
+            alert('Camera access denied or unavailable: ' + err.message);
+            setSource('upload');
+          });
+      } else {
+        if (cameraStream) {
+          cameraStream.getTracks().forEach(t => t.stop());
+          cameraStream = null;
+        }
+        video.style.display = 'none';
+        dropzone.style.display = 'block';
+      }
+    }
+
+    function triggerFileInput() {
+      if (document.getElementById('btnUpload').classList.contains('active')) {
+        document.getElementById('fileInput').click();
+      }
+    }
+
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      currentBlob = file;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        document.getElementById('canvasOrig').innerHTML = `<img src="${evt.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Quick synthetic demo buttons for hackathon judges
+    function loadSyntheticSample(type) {
+      let path = '';
+      if (type === 'scratch') path = '/static/samples/scratch_0000.png';
+      else if (type === 'dot') path = '/static/samples/dot_0000.png';
+      else if (type === 'chunk') path = '/static/samples/missing_chunk_0000.png';
+      else path = '/static/samples/good_0000.png';
+
+      fetch(path)
+        .then(res => res.blob())
+        .then(blob => {
+          currentBlob = blob;
+          const url = URL.createObjectURL(blob);
+          document.getElementById('canvasOrig').innerHTML = `<img src="${url}">`;
+          performInspection();
+        })
+        .catch(() => {
+          alert('Note: Put sample images in app/static/samples/ or use file upload.');
+        });
+    }
+
+    function updateThresholds() {
+      const low = parseFloat(document.getElementById('sliderLow').value);
+      const high = parseFloat(document.getElementById('sliderHigh').value);
+      document.getElementById('lblLow').innerText = low.toFixed(4);
+      document.getElementById('lblHigh').innerText = high.toFixed(4);
+
+      if (lastInspection) {
+        recalculateDecision(lastInspection.score, low, high);
+      }
+    }
+
+    function recalculateDecision(score, low, high) {
+      const banner = document.getElementById('decisionBanner');
+      const val = document.getElementById('decisionValue');
+      banner.className = 'decision-banner';
+
+      let dec = 'REVIEW';
+      if (score < low) {
+        dec = 'PASS';
+        banner.classList.add('pass');
+      } else if (score > high) {
+        dec = 'REJECT';
+        banner.classList.add('reject');
+      } else {
+        dec = 'REVIEW REQUIRED';
+        banner.classList.add('review');
+      }
+      val.innerText = dec;
+      return dec;
+    }
+
+    // Run Optical Anomaly Inspection
+    async function performInspection() {
+      // Capture frame from camera if camera is active
+      if (document.getElementById('btnCamera').classList.contains('active')) {
+        const video = document.getElementById('cameraVideo');
+        const c = document.createElement('canvas');
+        c.width = video.videoWidth || 512;
+        c.height = video.videoHeight || 512;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(video, 0, 0, c.width, c.height);
+        currentBlob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.95));
+      }
+
+      if (!currentBlob) {
+        alert('Please upload an image or activate the camera feed first.');
+        return;
+      }
+
+      const canvasHeat = document.getElementById('canvasHeat');
+      canvasHeat.classList.add('scanning');
+
+      const formData = new FormData();
+      formData.append('image', currentBlob);
+      formData.append('low', document.getElementById('sliderLow').value);
+      formData.append('high', document.getElementById('sliderHigh').value);
+
+      try {
+        const res = await fetch('/inspect', { method: 'POST', body: formData });
+        const data = await res.json();
+        canvasHeat.classList.remove('scanning');
+
+        if (data.error) {
+          alert('Inspection error: ' + data.error);
+          return;
+        }
+
+        lastInspection = data;
+
+        // Render images
+        document.getElementById('canvasOrig').innerHTML = `<img src="data:image/jpeg;base64,${data.orig_b64}">`;
+        document.getElementById('canvasHeat').innerHTML = `<img src="data:image/jpeg;base64,${data.heat_b64}">`;
+
+        // Update score, regions & latency pills
+        document.getElementById('dispScore').innerText = data.score.toFixed(4);
+        document.getElementById('dispRegions').innerText = data.anomaly_regions > 0 ? data.anomaly_regions : '0';
+        document.getElementById('dispRegions').style.color = data.anomaly_regions > 0 ? 'var(--reject-red)' : 'var(--pass-green)';
+        document.getElementById('dispLatency').innerText = `${data.latency_ms} ms`;
+
+        const low = parseFloat(document.getElementById('sliderLow').value);
+        const high = parseFloat(document.getElementById('sliderHigh').value);
+        recalculateDecision(data.score, low, high);
+
+        const currentPartId = `BM-IMP-${String(partCounter).padStart(5, '0')}`;
+        document.getElementById('dispPartId').innerText = currentPartId;
+
+      } catch (err) {
+        canvasHeat.classList.remove('scanning');
+        alert('Inspection request failed: ' + err.message);
+      }
+    }
+
+    // Inspector Sign-Off & Logging
+    async function signOff(actionType) {
+      if (!lastInspection) {
+        alert('Please run an optical scan before signing off.');
+        return;
+      }
+
+      const low = parseFloat(document.getElementById('sliderLow').value);
+      const high = parseFloat(document.getElementById('sliderHigh').value);
+      let dec = lastInspection.score < low ? 'PASS' : (lastInspection.score > high ? 'REJECT' : 'REVIEW');
+
+      if (actionType === 'Override to PASS') dec = 'PASS';
+      if (actionType === 'Override to REJECT') dec = 'REJECT';
+
+      const currentPartId = `BM-IMP-${String(partCounter).padStart(5, '0')}`;
+      const payload = {
+        part_id: currentPartId,
+        filename: 'live_scan.png',
+        score: lastInspection.score,
+        decision: dec,
+        latency_ms: lastInspection.latency_ms,
+        override: actionType,
+        inspector: document.getElementById('inspectorId').value,
+        notes: document.getElementById('inspectorNotes').value
+      };
+
+      await fetch('/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      partCounter++;
+      document.getElementById('dispPartId').innerText = `BM-IMP-${String(partCounter).padStart(5, '0')}`;
+      document.getElementById('inspectorNotes').value = '';
+
+      refreshLogs();
+    }
+
+    async function refreshLogs() {
+      try {
+        const res = await fetch('/logs');
+        const rows = await res.json();
+        const tbody = document.getElementById('logTableBody');
+        tbody.innerHTML = '';
+
+        let passCount = 0;
+        let rejectCount = 0;
+        let totalLat = 0;
+
+        rows.slice().reverse().forEach((r, idx) => {
+          if (r.Decision === 'PASS') passCount++;
+          if (r.Decision === 'REJECT') rejectCount++;
+          totalLat += parseFloat(r['Latency (s)'] || 0);
+
+          if (idx < 20) {
+            const tr = document.createElement('tr');
+            const badgeClass = r.Decision.toLowerCase();
+            tr.innerHTML = `
+              <td><strong>${r['Part ID']}</strong></td>
+              <td><code>${parseFloat(r['Anomaly Score']).toFixed(4)}</code></td>
+              <td><span class="badge-mini ${badgeClass}">${r.Decision}</span></td>
+              <td style="color: var(--text-muted); font-size: 0.7rem;">${r.Timestamp.split(' ')[1]}</td>
+            `;
+            tbody.appendChild(tr);
+          }
+        });
+
+        const total = rows.length;
+        document.getElementById('statTotal').innerText = total;
+        document.getElementById('statPassRate').innerText = total > 0 ? `${((passCount / total) * 100).toFixed(0)}%` : '100%';
+        document.getElementById('statRejects').innerText = rejectCount;
+        document.getElementById('statSpeed').innerText = total > 0 ? `${((totalLat / total) * 1000).toFixed(0)}` : '--';
+
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // Copy sample synthetic images to static folder so quick presets work seamlessly
+    window.addEventListener('DOMContentLoaded', () => {
+      refreshLogs();
+    });
+  </script>
+</body>
+</html>
