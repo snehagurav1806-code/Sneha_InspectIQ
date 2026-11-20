@@ -4,3 +4,4 @@ BM-IMP-00002,2026-11-17 01:13:03,light-box-008.jpg,1.0,REJECT,Confirmed,Insp-01 
 BM-IMP-00003,2026-11-18 18:15:17,cam_1795005916.png,0.6712,REJECT,Override to REJECT,Insp-01 (QA Tech),0.473,,C:\Users\SNEHA\OneDrive\Desktop\Hackathons\Srijan_2k26\defect-inspector\app\..\logs\BM-IMP-00003_1795005917.png
 BM-IMP-00001,2026-11-19 17:59:37,live_scan.png,0.5791,REJECT,Override to REJECT,QA-TECH-01,0.74,Surface verified under 10x magnification - confirmed hairline scratch
 BM-IMP-00001,2026-11-19 23:10:39,live_scan.png,0.0457,PASS,Confirmed,QA-TECH-01,0.423,
+BM-IMP-00001,2026-11-20 22:10:37,live_scan.png,0.4332,PASS,Override to PASS,QA-TECH-01,0.662,uyygtrhungt

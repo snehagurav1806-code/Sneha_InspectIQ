@@ -53,8 +53,11 @@ def run_inference(img_bgr: np.ndarray):
     raw    = float(out.pred_score.squeeze().item())
     amap   = out.anomaly_map.squeeze().cpu().numpy().astype(np.float32)
     amap   = cv2.resize(amap, (config.IMAGE_SIZE, config.IMAGE_SIZE))
-    # Normalise to [0,1] using empirically observed range
-    norm   = max(0.0, min(1.0, (raw - 18.0) / 80.0))
+    # Normalise to [0,1] dynamically using calibrated range from thresholds.json
+    thresh = load_thresholds()
+    raw_min = float(thresh.get("raw_min", 36.09))
+    raw_max = float(thresh.get("raw_max", 94.25))
+    norm   = max(0.0, min(1.0, (raw - raw_min) / (raw_max - raw_min + 1e-8)))
     return raw, norm, amap
 
 def merge_boxes(boxes, dist_thresh=10):
@@ -87,8 +90,10 @@ def merge_boxes(boxes, dist_thresh=10):
 
 def make_heatmap_overlay(img_bgr: np.ndarray, amap: np.ndarray, score: float, is_defective: bool = True):
     """Return (overlay_image, anomaly_count).
-    Extracts all distinct defect regions (cracks, chips, voids) using morphological
-    top-hat peak isolation and merges close contours so every defect gets a bounding box."""
+    Uses adaptive per-object thresholding to find anomaly PEAKS relative to the
+    object's own surface baseline — so a uniformly-elevated heatmap (e.g. the nut
+    whose whole body is 'orange') doesn't get boxed as one giant defect; only the
+    local hotspots that stand out ABOVE the object's own mean+sigma are boxed."""
     sz = config.IMAGE_SIZE
     img = cv2.resize(img_bgr, (sz, sz))
     anomaly_count = 0
@@ -102,32 +107,70 @@ def make_heatmap_overlay(img_bgr: np.ndarray, amap: np.ndarray, score: float, is
         norm_map = np.zeros((sz, sz), dtype=np.uint8)
 
     if is_defective and (amap.max() > amap.min() + 1e-6):
-        # Mask strictly within the cap face & rim to eliminate table/drop-shadow false positives
-        mask = np.zeros((sz, sz), dtype=np.uint8)
-        cv2.circle(mask, (sz // 2, sz // 2), int(sz * 0.44), 255, -1)
+        # ── Step 1: mask border and background ──────────────────────────────
+        margin = max(16, int(sz * 0.06))
+        masked_map = norm_map.copy()
+        masked_map[:margin, :] = 0
+        masked_map[-margin:, :] = 0
+        masked_map[:, :margin] = 0
+        masked_map[:, -margin:] = 0
 
-        # Top-Hat isolates local defect peaks/cracks from varying cap baseline
-        blurred = cv2.GaussianBlur(norm_map, (15, 15), 0)
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (35, 35))
-        tophat = cv2.morphologyEx(blurred, cv2.MORPH_TOPHAT, kernel)
-        tophat_masked = cv2.bitwise_and(tophat, tophat, mask=mask)
+        # ── Step 2: detect object region (non-background pixels) ────────────
+        # Smooth object region detection using the original image grayscale
+        gray_obj = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray_blur = cv2.GaussianBlur(gray_obj, (7, 7), 0)
+        # Background is typically bright/white — object is darker
+        # Use Otsu to separate object from background
+        _, obj_mask = cv2.threshold(gray_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        # Dilate object mask slightly to include edges
+        k_obj = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
+        obj_mask = cv2.dilate(obj_mask, k_obj)
+        # Mask the anomaly map to only the object region
+        masked_map = cv2.bitwise_and(masked_map, masked_map, mask=obj_mask)
 
-        # Threshold local anomaly peaks (sharp cracks, chips, voids)
-        _, bm = cv2.threshold(tophat_masked, 29, 255, cv2.THRESH_BINARY)
-        k_merge = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (21, 21))
+        # ── Step 3: Adaptive threshold — find peaks above object's own baseline ──
+        # Collect anomaly values WITHIN the object (non-zero in masked_map after masking)
+        obj_pixels = masked_map[obj_mask > 0]
+        if len(obj_pixels) > 200:
+            obj_mean = float(obj_pixels.mean())
+            obj_std  = float(obj_pixels.std())
+            # Peaks must be significantly above the object's own baseline:
+            # Use mean + 1.8*std but clamp to [160, 240] for safety
+            adaptive_thresh = int(np.clip(obj_mean + 1.8 * obj_std, 160, 240))
+        else:
+            adaptive_thresh = int(np.clip(masked_map.max() * 0.80, 180, 240))
+
+        _, bm = cv2.threshold(masked_map, adaptive_thresh, 255, cv2.THRESH_BINARY)
+
+        # ── Step 4: Connect nearby fragments of the same defect ─────────────
+        # Small dilation (5×5) bridges multi-pixel stroke fragments of a scratch
+        k_merge = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
         bm_dil = cv2.dilate(bm, k_merge)
 
         cnts, _ = cv2.findContours(bm_dil, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        raw_boxes = [cv2.boundingRect(c) for c in cnts if cv2.contourArea(c) > 90]
+        # Minimum contour area = 20px² to skip noise specks
+        raw_boxes = [cv2.boundingRect(c) for c in cnts if cv2.contourArea(c) >= 20]
 
-        # Merge nearby fragments that belong to the same crack
-        boxes = merge_boxes(raw_boxes, dist_thresh=12)
-        # Sort defects by area descending
-        boxes = sorted(boxes, key=lambda b: b[2] * b[3], reverse=True)
+        # ── Step 5: Merge closely adjacent fragments (same defect line) ─────
+        boxes = merge_boxes(raw_boxes, dist_thresh=8)
+
+        # ── Step 6: Filter false positives ──────────────────────────────────
+        # Reject boxes covering > 70% of image (whole-object false boxes)
+        boxes = [b for b in boxes if b[2] < sz * 0.70 and b[3] < sz * 0.70]
+        # Reject tiny noise boxes (< 1% of image area)
+        min_box_area = sz * sz * 0.005
+        boxes = [b for b in boxes if b[2] * b[3] >= min_box_area]
+
+        # Sort by anomaly intensity (mean value in that region) descending
+        def region_score(b):
+            x_, y_, w_, h_ = b
+            patch = masked_map[y_:y_+h_, x_:x_+w_]
+            return float(patch.mean()) if patch.size > 0 else 0.0
+        boxes = sorted(boxes, key=region_score, reverse=True)
 
         colours = [(255, 255, 255), (0, 255, 255), (255, 255, 0), (0, 200, 255), (255, 150, 100)]
         for i, (x, y, w, h) in enumerate(boxes[:5]):
-            pad = 5
+            pad = 4
             x = max(0, x - pad)
             y = max(0, y - pad)
             w = min(sz - x, w + 2 * pad)
@@ -135,7 +178,6 @@ def make_heatmap_overlay(img_bgr: np.ndarray, amap: np.ndarray, score: float, is
             col = colours[i % len(colours)]
             cv2.rectangle(overlay, (x, y), (x + w, y + h), col, 2)
 
-            # Draw clean dark pill badge for label so text is 100% crisp and readable
             label = f"DEFECT-{i+1}"
             font = cv2.FONT_HERSHEY_SIMPLEX
             scale = 0.40

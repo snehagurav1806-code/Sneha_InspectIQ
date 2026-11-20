@@ -46,5 +46,5 @@ BASELINE_DIFF_THRESHOLD = 30   # pixel-level absolute diff threshold
 N_GOOD_TRAIN   = 50
 N_GOOD_VAL     = 20
 N_PER_DEFECT   = 15          # images per defect type
-DEFECT_TYPES   = ["scratch", "dot", "missing_chunk"]
+DEFECT_TYPES   = ["scratch", "crack", "hole", "dent", "missing_chunk"]
 

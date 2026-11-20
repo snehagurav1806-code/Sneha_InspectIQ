@@ -1,27 +1,39 @@
 {
-  "low": 0.2698,
-  "high": 0.4994,
-  "defect_caught_rate": 1.0,
-  "defect_reject_rate": 1.0,
-  "defect_escape_rate": 0.0,
-  "false_reject_rate": 0.0,
-  "good_pass_rate": 1.0,
-  "review_pct": 0.0,
+  "low": 0.3863,
+  "high": 0.4863,
+  "defect_caught_rate": 0.9067,
+  "defect_reject_rate": 0.7467,
+  "defect_escape_rate": 0.0933,
+  "false_reject_rate": 0.1053,
+  "good_pass_rate": 0.7368,
+  "review_pct": 0.1596,
   "per_defect_stats": {
-    "dot": {
+    "crack": {
       "caught_rate": 1.0,
-      "mean_score": 0.8188,
+      "mean_score": 0.5974,
+      "count": 15
+    },
+    "dent": {
+      "caught_rate": 0.5333,
+      "mean_score": 0.3609,
+      "count": 15
+    },
+    "hole": {
+      "caught_rate": 1.0,
+      "mean_score": 0.7795,
       "count": 15
     },
     "missing_chunk": {
       "caught_rate": 1.0,
-      "mean_score": 0.6182,
+      "mean_score": 0.5298,
       "count": 15
     },
     "scratch": {
       "caught_rate": 1.0,
-      "mean_score": 0.8233,
+      "mean_score": 0.6972,
       "count": 15
     }
-  }
+  },
+  "raw_min": 37.6029,
+  "raw_max": 94.0177
 }

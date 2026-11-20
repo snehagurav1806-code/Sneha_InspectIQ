@@ -168,6 +168,8 @@ if __name__ == "__main__":
 
     low, high = compute_thresholds(good_s, defect_s)
     metrics = print_metrics(df, low, high)
+    metrics["raw_min"] = round(float(df["raw_score"].min()), 4)
+    metrics["raw_max"] = round(float(df["raw_score"].max()), 4)
 
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     with open(THRESHOLDS_JSON, "w") as f:
